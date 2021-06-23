@@ -13,16 +13,17 @@
         </select>
 
         <button id="btnEdit" class="btn btn-secondary col-md-1 mb-1 mx-3"
-                @click="setUser">Выбрать</button>
-        <button id="btnNew" class="btn btn-secondary col-md-1 mb-1 mx-3"> Новый </button>
+                @click="setUser(parseInt(users.id))">Выбрать</button>
+        <button id="btnNew" class="btn btn-secondary col-md-1 mb-1 mx-3"
+                @click="newUser()"> Новый </button>
         <button id="btnReturn" class="btn btn-secondary col-md-2 mb-1 mx-3" disabled
-                @click="varUser">Сменить исполнителя</button>
+                @click="varUser(parseInt(users.id))">Сменить исполнителя</button>
         
     </div>
         <hr />
     <div>
         <h5 class="primary mx-4">Список заявок</h5>
-        <select id="spWork" v-model="work" class="form-control col-md-10 mb-3 mx-4" size="3" @change="viewWork" disabled>
+        <select id="spWork" v-model="work" class="form-control col-md-10 mb-3 mx-4" size="3" @change="viewWork(work)" disabled>
             <option v-for="work in outWork" v-bind:key="work" v-bind:value="work">
                 {{work.data}} | {{work.typeApp}} :  {{work.txtApp}}
             </option>
@@ -90,65 +91,75 @@
           this.outWork = spisok.
               filter(work => work.userId === parseInt(tid))
       },
-      viewWork() {
-          document.getElementById('dataDec').value = this.work.data
-          document.getElementById('typeDec').value = this.work.typeApp
-          document.getElementById('statusDec').value = this.work.statusApp
-          document.getElementById('txtDec').value = this.work.txtApp
-          document.getElementById('autDec').value = this.work.autApp
+      // Отображение текущей заявки в полях input 
+      viewWork(arrWork) {
+          
+          document.getElementById('dataDec').value = arrWork.data
+          document.getElementById('typeDec').value = arrWork.typeApp
+          document.getElementById('statusDec').value = arrWork.statusApp
+          document.getElementById('txtDec').value = arrWork.txtApp
+          document.getElementById('autDec').value = arrWork.autApp
+      
       },
-      varUser() {
-          if (this.id !== 0) {
-              document.getElementById('inputUser').disabled = false
-              document.getElementById('btnNew').disabled = false
-              document.getElementById('btnEdit').disabled = false
-              document.getElementById('btnReturn').disabled = true
-              document.getElementById('spWork').disabled = true
-              document.getElementById('btnRed').disabled = true
-              document.getElementById('btnN').disabled = true
+      boolSet(boolId, blockID) {
+          let bT = false
+          let bF = true
+          if (boolId === true) {
+              bT = true
+              bF = false
+          }
+          if (blockID === 1) {
+              document.getElementById('inputUser').disabled = bT
+              document.getElementById('btnNew').disabled = bT
+              document.getElementById('btnEdit').disabled = bT
+              document.getElementById('btnReturn').disabled = bF
+              document.getElementById('spWork').disabled = bF
+              document.getElementById('btnRed').disabled = bF
+              document.getElementById('btnN').disabled = bF
+          } else {
+              document.getElementById('spWork').disabled = bT
+              document.getElementById('btnN').disabled = bT
+              document.getElementById('btnReturn').disabled = bT
+              document.getElementById('btnRed').disabled = bT
+              document.getElementById('btnSave').disabled = bF
 
+              document.getElementById('dataDec').disabled = bF
+              document.getElementById('typeDec').disabled = bF
+              document.getElementById('statusDec').disabled = bF
+              document.getElementById('txtDec').disabled = bF
+              document.getElementById('autDec').disabled = bF
+          }
+          
+      },
+      // Смена пользователя
+      varUser(vuTid) {
+          if (!isNaN(vuTid) || vuTid === 0) {
+              this.boolSet(false, 1) // блокировка и разблокировка полейи кнопок
           }
 
       },
-      setUser() {
-          if (this.id !== 0) {
-              document.getElementById('inputUser').disabled = true
-              document.getElementById('btnNew').disabled = true
-              document.getElementById('btnEdit').disabled = true
-              document.getElementById('btnReturn').disabled = false
-              document.getElementById('spWork').disabled = false
-              document.getElementById('btnRed').disabled = false
-              document.getElementById('btnN').disabled = false
+      // Выбор пользователя
+      setUser(suTid) {
+          if (!isNaN(suTid) || suTid === 0) {
+              this.boolSet(true, 1) // блокировка и разблокировка полейи кнопок
           }
       },
+      // Новый пользователь
+      newUser() {
+
+      },
+      // Редактирование заявки
       editDecl() {
-          document.getElementById('spWork').disabled = true
-          document.getElementById('btnN').disabled = true
-          document.getElementById('btnReturn').disabled = true
-          document.getElementById('btnRed').disabled = true
-          document.getElementById('btnSave').disabled = false
-
-          document.getElementById('dataDec').disabled = false
-          document.getElementById('typeDec').disabled = false
-          document.getElementById('statusDec').disabled = false
-          document.getElementById('txtDec').disabled = false
-          document.getElementById('autDec').disabled = false
+          this.boolSet(true, 2) // блокировка и разблокировка полейи кнопок
+          
       },
+      // Сохранение заявки
       saveDecl() {
+          this.boolSet(false, 2) // блокировка и разблокировка полейи кнопок
 
-          // спросить сохранять изменения или нет
+          //TODO: спросить сохранять изменения или нет
 
-          document.getElementById('spWork').disabled = false
-          document.getElementById('btnN').disabled = false
-          document.getElementById('btnReturn').disabled = false
-          document.getElementById('btnRed').disabled = false
-          document.getElementById('btnSave').disabled = true
 
-          document.getElementById('dataDec').disabled = true
-          document.getElementById('typeDec').disabled = true
-          document.getElementById('statusDec').disabled = true
-          document.getElementById('txtDec').disabled = true
-          document.getElementById('autDec').disabled = true
       }
   }
 };
