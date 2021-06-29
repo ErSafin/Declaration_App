@@ -6,36 +6,45 @@
     </div>
     <h5 class="primary mx-4">Исполнитель</h5>
     <div id="footer" class="container-fluid mx-2 row">
-        <select id="inputUser" v-model="users.id" class="form-control col-md-4 mb-1 " autofocus @change="chEntry(users.id)">
+        <select id="inputUser" v-model="users.id" class="form-control col-md-4 mb-1 " autofocus @change="chEntry(users.id)" selected>
             <option v-for="(value,key) in users" v-bind:key="key" v-bind:value="value.id">
                 {{value.name}}
             </option>
         </select>
 
         <button id="btnEdit" class="btn btn-secondary col-md-1 mb-1 mx-3"
-                @click="setUser">Выбрать</button>
-        <button id="btnNew" class="btn btn-secondary col-md-1 mb-1 mx-3"> Новый </button>
+                @click="setUser(parseInt(users.id))">Выбрать</button>
+        <button id="btnNew" class="btn btn-secondary col-md-1 mb-1 mx-3"
+                @click="newUser()"> Новый </button>
         <button id="btnReturn" class="btn btn-secondary col-md-2 mb-1 mx-3" disabled
-                @click="varUser">Сменить исполнителя</button>
-        
+                @click="varUser(parseInt(users.id))">Сменить исполнителя</button>
+
     </div>
         <hr />
-    <div>
-        <h5 class="primary mx-4">Список заявок</h5>
-        <select id="spWork" v-model="work" class="form-control col-md-10 mb-3 mx-4" size="3" @change="viewWork" disabled>
-            <option v-for="work in outWork" v-bind:key="work" v-bind:value="work">
-                {{work.data}} | {{work.typeApp}} :  {{work.txtApp}}
-            </option>
-        </select>
-    </div>
+        <div>
+            <h5 class="primary mx-4">Список заявок</h5>
+            <select id="spWork" v-model="work" class="form-control col-md-10 mb-3 mx-4" size="3" @change="viewWork(work)" disabled>
+                <option v-for="work in outWork" v-bind:key="work" v-bind:value="work">
+                    {{work.data}} | {{work.typeApp}} :  {{work.txtApp}}
+                </option>
+            </select>
 
-    <div class="container-fluid" id="btnD">
-        <button id="btnRed" class="btn btn-secondary col-md-2 mb-1 mx-3" disabled
-                @click="editDecl">Редактировать</button>
-        <button id="btnN" class="btn btn-secondary col-md-2 mb-1 mx-3" disabled>Новая заявка</button>
-        <button id="btnSave" class="btn btn-secondary col-md-2 mb-1 mx-3" disabled
-                @click="saveDecl">Сохранить</button>
-    </div>
+
+            <div class="container-fluid" id="btnD">
+                <button id="btnRed" class="btn btn-secondary col-md-2 mb-1 mx-3" disabled
+                        @click="editDecl">
+                    Редактировать
+                </button>
+                <button id="btnN" class="btn btn-secondary col-md-2 mb-1 mx-3" disabled
+                        @click="newDecl">
+                    Новая заявка
+                </button>
+                <button id="btnSave" class="btn btn-secondary col-md-2 mb-1 mx-3" disabled
+                        @click="saveDecl(parseInt(users.id))">
+                    Сохранить
+                </button>
+            </div>
+        </div>
     
     <div class="container-fluid" id="view">
         <hr />
@@ -43,18 +52,18 @@
         <br />
         <div class="row">
             <label for="dataDec" class="mx-3">Дата</label>
-            <input type="text" class="form-control col-md-2 mb-1" id="dataDec" value="" required disabled/>
+            <input type="text" class="form-control col-md-2 mb-1" id="dataDec" v-model="dataDec" required disabled/>
             <label for="typeDec" class="mx-3">Тип заявки</label>
-            <input type="text" class="form-control col-md-6 mb-1" id="typeDec" value="" required disabled/>
+            <input type="text" class="form-control col-md-6 mb-1" id="typeDec" v-model="typeDec" required disabled/>
         </div>
         <div class="row">
             <label for="statusDec" class="mx-3">Статус</label>
-            <input type="text" class="form-control col-md-2 mb-1" id="statusDec" value="" required disabled/>
+            <input type="text" class="form-control col-md-2 mb-1" id="statusDec" v-model="statusDec" required disabled/>
             <label for="authorDec" class="mx-3">Автор заявки</label>
-            <input type="text" class="form-control col-md-5 mb-1" id="autDec" value="" required disabled/>
+            <input type="text" class="form-control col-md-5 mb-1" id="autDec" v-model="autDec" required disabled/>
         </div>        
         <label for="txtDec">Текст </label>
-        <input type="text" class="form-control col-md-10 mb-1 mx-3" id="txtDec" value="" required disabled/>
+        <input type="text" class="form-control col-md-10 mb-1 mx-3" id="txtDec" v-model="txtDec" required disabled/>
         <hr />
     </div>
 
@@ -65,10 +74,11 @@
 </template>
 
 <script>
- // в JSON ввсести поле uniqId - уникальный номер заявки, чтобы по ней можно было сохранять
-    
-    import spisok from "/App.json"
-    import newuser from "/menuApp.json"
+
+ // TODO: валидация наличия файлов JSON
+
+ import spisok from "/App.json"
+ import newuser from "/menuApp.json"
 
  export default {
   name: "App",
@@ -77,78 +87,209 @@
         },
   data() {
       return {
-          selected: 1,
+          selected: 0,
           outWork: '',
           work: '',
-          users: newuser
+          newSpisok: spisok,
+          users: newuser,
+          isEdit: false,
+          indEdit: 0,
+          nUniqId: 0,
+          nullArray: {
+              "userId": 0,
+              "data": "",
+              "typeApp": "",
+              "statusApp": "",
+              "autApp": "",
+              "txtApp": "",
+              "uniqId": 0
+          },
+          dataDec: '',
+          typeDec: '',
+          statusDec: '',
+          autDec: '',
+          txtDec: '',
+          uniqDec: 0,
+          userDec: 0,
+          addJson: [],
+          errors: []
           
       }
   },
   methods: {
+      checkErrors() {
+          this.errors = []
+          if (!this.dataDec) {
+              this.errors.push('Не введена дата.')
+          }
+          if (!this.typeDec) {
+              this.errors.push ('Не введен тип заявки.')
+          }
+          if (!this.errors.length) {
+              return true
+          }
+          //e.preventDefault()
+
+      },
+
       chEntry(tid) {
           // значение выбранное из выпадающего списка записывается в id и фильтруется JSON
-          this.outWork = spisok.
-              filter(work => work.userId === parseInt(tid))
+          if (!isNaN(tid) || tid === 0) {
+              this.outWork = this.newSpisok.
+                  filter(work => work.userId === parseInt(tid))
+          }
       },
-      viewWork() {
-          document.getElementById('dataDec').value = this.work.data
-          document.getElementById('typeDec').value = this.work.typeApp
-          document.getElementById('statusDec').value = this.work.statusApp
-          document.getElementById('txtDec').value = this.work.txtApp
-          document.getElementById('autDec').value = this.work.autApp
+      // Отображение текущей заявки в полях input 
+      viewWork(arrWork) {
+          this.dataDec = arrWork.data
+          this.typeDec = arrWork.typeApp
+          this.statusDec = arrWork.statusApp
+          this.autDec = arrWork.autApp
+          this.txtDec = arrWork.txtApp
       },
-      varUser() {
-          if (this.id !== 0) {
-              document.getElementById('inputUser').disabled = false
-              document.getElementById('btnNew').disabled = false
-              document.getElementById('btnEdit').disabled = false
-              document.getElementById('btnReturn').disabled = true
-              document.getElementById('spWork').disabled = true
-              document.getElementById('btnRed').disabled = true
-              document.getElementById('btnN').disabled = true
+      boolSet(boolId, blockID) {
+          let bT = false
+          let bF = true
+          if (boolId === 1) {
+              bT = true
+              bF = false
+          }
+          if (blockID === 1) {
+              document.getElementById('inputUser').disabled = bT
+              document.getElementById('btnNew').disabled = bT
+              document.getElementById('btnEdit').disabled = bT
+              document.getElementById('btnReturn').disabled = bF
+              document.getElementById('spWork').disabled = bF
+              document.getElementById('btnRed').disabled = bF
+              document.getElementById('btnN').disabled = bF
+          } else {
+              document.getElementById('spWork').disabled = bT
+              document.getElementById('btnN').disabled = bT
+              document.getElementById('btnReturn').disabled = bT
+              document.getElementById('btnRed').disabled = bT
+              document.getElementById('btnSave').disabled = bF
 
+              document.getElementById('dataDec').disabled = bF
+              document.getElementById('typeDec').disabled = bF
+              document.getElementById('statusDec').disabled = bF
+              document.getElementById('txtDec').disabled = bF
+              document.getElementById('autDec').disabled = bF
+          }
+          
+      },
+      // Смена пользователя
+      varUser(vuTid) {
+          if (!isNaN(vuTid) || vuTid === 0) {
+              this.boolSet(2, 1) // блокировка и разблокировка полей и кнопок
+          } else {
+              alert("Выберите исполнителя.")
           }
 
       },
-      setUser() {
-          if (this.id !== 0) {
-              document.getElementById('inputUser').disabled = true
-              document.getElementById('btnNew').disabled = true
-              document.getElementById('btnEdit').disabled = true
-              document.getElementById('btnReturn').disabled = false
-              document.getElementById('spWork').disabled = false
-              document.getElementById('btnRed').disabled = false
-              document.getElementById('btnN').disabled = false
+      // Выбор пользователя
+      setUser(suTid) {
+          if (!isNaN(suTid) || suTid === 0) {
+              this.boolSet(1, 1) // блокировка и разблокировка полей и кнопок
+              document.getElementById('spWork').autofocus = true
+          } else {
+              alert("Выберите исполнителя.")
           }
       },
+      // Новый пользователь
+      newUser() {
+          const newU = prompt("Введите нового исполнителя ФИО");
+          alert(newU)
+          // TODO: запись в JSON menuApp
+
+      },
+      // Редактирование заявки
       editDecl() {
-          document.getElementById('spWork').disabled = true
-          document.getElementById('btnN').disabled = true
-          document.getElementById('btnReturn').disabled = true
-          document.getElementById('btnRed').disabled = true
-          document.getElementById('btnSave').disabled = false
-
-          document.getElementById('dataDec').disabled = false
-          document.getElementById('typeDec').disabled = false
-          document.getElementById('statusDec').disabled = false
-          document.getElementById('txtDec').disabled = false
-          document.getElementById('autDec').disabled = false
+          this.boolSet(1, 2) // блокировка и разблокировка полей и кнопок
+          this.indEdit = this.newSpisok.findIndex((ie) => { return parseInt(ie.uniqId) === parseInt(this.work.uniqId) })
+          this.nUniqId = parseInt(this.work.uniqId)
+          this.isEdit = true
+          
       },
-      saveDecl() {
+      // Сохранение заявки
+      saveDecl(numId) {
+          const isSave = confirm("Сохранить изменения?");
+          if (isSave) {
 
-          // спросить сохранять изменения или нет
+              //debugger
 
-          document.getElementById('spWork').disabled = false
-          document.getElementById('btnN').disabled = false
-          document.getElementById('btnReturn').disabled = false
-          document.getElementById('btnRed').disabled = false
-          document.getElementById('btnSave').disabled = true
+              // TODO: добавить валидацию на пустые поля и дату
+              this.nullArray.userId = numId
+              this.nullArray.data = this.dataDec
+              this.nullArray.typeApp = this.typeDec
+              this.nullArray.statusApp = this.statusDec
+              this.nullArray.txtApp = this.txtDec
+              this.nullArray.autApp = this.autDec
 
-          document.getElementById('dataDec').disabled = true
-          document.getElementById('typeDec').disabled = true
-          document.getElementById('statusDec').disabled = true
-          document.getElementById('txtDec').disabled = true
-          document.getElementById('autDec').disabled = true
+                                          
+              // перенос данных в рабочий массив newSpisok, НО БЕЗ сохранения в JSON-файл
+
+              console.log(this.indEdit)
+
+              // TODO: при выборе Иванов и 1 позицию в массиве =0 и при редактировании всё норм, а при добавлении нового
+              //        изменяет позицию = 0 и добавляет тоже самое в конец списка т.е. пушит
+              //   вероятно проблема с значением uniqId
+
+              // всё это делает при присваивании значения в nullArray еще не доходя до проверки редактирования
+              // - может от nullArray отказаться ?
+
+
+
+              console.log(this.nullArray)
+              console.log(this.newSpisok)
+              console.log(this.isEdit)
+
+
+              if (this.isEdit) {  // редактирование
+                  this.nullArray.uniqId = this.nUniqId
+                  this.newSpisok[this.indEdit] = this.nullArray
+          
+
+              } else { // новый
+                  this.nullArray.uniqId = parseInt(Date.now())
+                  this.newSpisok.push(this.nullArray)
+          
+              }
+              this.chEntry(this.users.id)
+              this.isEdit = null
+
+              console.log(this.newSpisok)
+
+              // TODO: надо перенести addJson в конец файла App.json
+              // this.addJson = JSON.stringify([this.newSpisok])
+              // console.log(this.addJson)
+
+
+              
+          } else {
+              //TODO: надо передать фокус на id="spWork"
+              document.getElementById('spWork').autofocus=true
+          }
+         this.boolSet(2, 2) // блокировка и разблокировка полей и кнопок
+      },
+
+      // Новая заявка
+      newDecl() {
+          this.boolSet(1, 2) // блокировка и разблокировка полей и кнопок
+          this.isEdit = false
+
+          this.dataDec = ''
+          this.typeDec = ''
+          this.statusDec = ''
+          this.txtDec = ''
+          this.autDec = ''
+      //    this.indEdit = this.newSpisok.length
+      //    console.log(this.indEdit)
+      },
+      procSave() {
+          
+
+
+     
       }
   }
 };
