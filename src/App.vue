@@ -1,33 +1,30 @@
-
 <template>
-    <div class="container-fluid py-1 text-center">
-        <h3>Приём заявок</h3>
-        <hr />
-    </div>
-    <h5 class="primary mx-4">Исполнитель</h5>
-    <div id="footer" class="container-fluid mx-2 row">
-        <select id="inputUser" v-model="users.id" class="form-control col-md-4 mb-1 " autofocus @change="chEntry(users.id)" selected>
-            <option v-for="(value,key) in users" v-bind:key="key" v-bind:value="value.id">
-                {{value.name}}
-            </option>
-        </select>
-
-        <button id="btnEdit" class="btn btn-secondary col-md-1 mb-1 mx-3"
-                @click="setUser(parseInt(users.id))">Выбрать</button>
-        <button id="btnNew" class="btn btn-secondary col-md-1 mb-1 mx-3"
-                @click="newUser()"> Новый </button>
-        <button id="btnReturn" class="btn btn-secondary col-md-2 mb-1 mx-3" disabled
-                @click="varUser(parseInt(users.id))">Сменить исполнителя</button>
-
+     
+    <h4 class="py-1 text-center">Приём заявок</h4>
+    <hr />
+    <user-item @create="showWorks"/>
+          
+    <div>
+        <button id="btnEdit" class="btn btn-secondary col-md-2 my-2 mb-1 mx-5"
+                @click="setUser(parseInt(id))">
+            Выбрать
+        </button>
+        <button id="btnNew" class="btn btn-secondary col-md-2 mb-1 my-2"
+                @click="newUser()">
+            Новый
+        </button>
+        <button id="btnReturn" class="btn btn-secondary col-md-3 mb-1 my-2 mx-3" disabled
+                @click="varUser(parseInt(id))">
+            Сменить исполнителя
+        </button>
     </div>
         <hr />
         <div>
-            <h5 class="primary mx-4">Список заявок</h5>
-            <select id="spWork" v-model="work" class="form-control col-md-10 mb-3 mx-4" size="3" @change="viewWork(work)" disabled>
-                <option v-for="work in outWork" v-bind:key="work" v-bind:value="work">
-                    {{work.data}} | {{work.typeApp}} :  {{work.txtApp}}
-                </option>
-            </select>
+            <label class="head1 mx-4 col-md-5">Список заявок</label> <span class="sort md-4 " id="lbl1" hidden>Сортировка</span>
+             <a href="#" id="sortData" class="sort mx-4" @click="sortData('data')" hidden>по дате</a>  
+             <a href='#' id="sortStat" class="sort" @click="sortData('statusApp')" hidden>по статусу</a>
+            <list-request v-bind:outWork="outWork" @work="showView"/>
+            
 
 
             <div class="container-fluid" id="btnD">
@@ -40,7 +37,7 @@
                     Новая заявка
                 </button>
                 <button id="btnSave" class="btn btn-secondary col-md-2 mb-1 mx-3" disabled
-                        @click="saveDecl(parseInt(users.id))">
+                        @click="saveDecl(parseInt(id))">
                     Сохранить
                 </button>
             </div>
@@ -74,36 +71,27 @@
 </template>
 
 <script>
-
- // TODO: валидация наличия файлов JSON
+  // TODO: валидация наличия файлов JSON
 
  import spisok from "/App.json"
- import newuser from "/menuApp.json"
+ 
+ import UserItem from '@/components/UserItem'
+ import ListRequest from '@/components/ListRequest'
 
  export default {
   name: "App",
-  components: {
-      
+        components: {
+            UserItem, ListRequest
         },
   data() {
       return {
-          selected: 0,
+          id: 0,
           outWork: '',
           work: '',
           newSpisok: spisok,
-          users: newuser,
-          isEdit: false,
+          isEdit: null,
           indEdit: 0,
           nUniqId: 0,
-          nullArray: {
-              "userId": 0,
-              "data": "",
-              "typeApp": "",
-              "statusApp": "",
-              "autApp": "",
-              "txtApp": "",
-              "uniqId": 0
-          },
           dataDec: '',
           typeDec: '',
           statusDec: '',
@@ -111,7 +99,7 @@
           txtDec: '',
           uniqDec: 0,
           userDec: 0,
-          addJson: [],
+          newJson: [],
           errors: []
           
       }
@@ -131,21 +119,23 @@
           //e.preventDefault()
 
       },
-
-      chEntry(tid) {
+    
+      showWorks(presentId) {
           // значение выбранное из выпадающего списка записывается в id и фильтруется JSON
-          if (!isNaN(tid) || tid === 0) {
+          if (!isNaN(presentId) || presentId === 0) {
+              this.id = presentId
               this.outWork = this.newSpisok.
-                  filter(work => work.userId === parseInt(tid))
+                  filter(work => work.userId === parseInt(presentId))
           }
       },
       // Отображение текущей заявки в полях input 
-      viewWork(arrWork) {
+      showView(arrWork) {
           this.dataDec = arrWork.data
           this.typeDec = arrWork.typeApp
           this.statusDec = arrWork.statusApp
           this.autDec = arrWork.autApp
           this.txtDec = arrWork.txtApp
+          this.nUniqId = arrWork.uniqId
       },
       boolSet(boolId, blockID) {
           let bT = false
@@ -160,10 +150,16 @@
               document.getElementById('btnEdit').disabled = bT
               document.getElementById('btnReturn').disabled = bF
               document.getElementById('spWork').disabled = bF
+              document.getElementById('sortData').hidden = bF
+              document.getElementById('sortStat').hidden = bF
+              document.getElementById('lbl1').hidden = bF
               document.getElementById('btnRed').disabled = bF
               document.getElementById('btnN').disabled = bF
           } else {
               document.getElementById('spWork').disabled = bT
+              document.getElementById('sortData').hidden = bT
+              document.getElementById('sortStat').hidden = bT
+              document.getElementById('lbl1').hidden = bT
               document.getElementById('btnN').disabled = bT
               document.getElementById('btnReturn').disabled = bT
               document.getElementById('btnRed').disabled = bT
@@ -179,18 +175,24 @@
       },
       // Смена пользователя
       varUser(vuTid) {
-          if (!isNaN(vuTid) || vuTid === 0) {
+          if (vuTid !== 0 & !isNaN(vuTid)) {
+              // формируется JSON
+              this.newJson = JSON.stringify([this.newSpisok])
+
+              // TODO: надо перезаписать файл App.json
+              //console.log(this.newJson)
+
               this.boolSet(2, 1) // блокировка и разблокировка полей и кнопок
           } else {
               alert("Выберите исполнителя.")
           }
-
       },
       // Выбор пользователя
       setUser(suTid) {
-          if (!isNaN(suTid) || suTid === 0) {
+          if (suTid !== 0 & !isNaN(suTid)) {
               this.boolSet(1, 1) // блокировка и разблокировка полей и кнопок
-              document.getElementById('spWork').autofocus = true
+              //TODO : передать фокус на id = spWork
+
           } else {
               alert("Выберите исполнителя.")
           }
@@ -204,71 +206,70 @@
       },
       // Редактирование заявки
       editDecl() {
-          this.boolSet(1, 2) // блокировка и разблокировка полей и кнопок
-          this.indEdit = this.newSpisok.findIndex((ie) => { return parseInt(ie.uniqId) === parseInt(this.work.uniqId) })
-          this.nUniqId = parseInt(this.work.uniqId)
-          this.isEdit = true
+          if (parseInt(this.nUniqId) !== 0) {
+              this.boolSet(1, 2) // блокировка и разблокировка полей и кнопок
+              this.indEdit = this.newSpisok.findIndex((ie) => { return parseInt(ie.uniqId) === parseInt(this.nUniqId) })
+              this.nUniqId = parseInt(this.work.uniqId)
+              this.isEdit = true
+          } else {
+              alert("Выберите элемент 'СПИСКА ЗАЯВОК'")
+          }
           
       },
       // Сохранение заявки
       saveDecl(numId) {
-          const isSave = confirm("Сохранить изменения?");
-          if (isSave) {
+          const nullArray = { 
+              userId: 0,
+              data: "",
+              typeApp: "",
+              statusApp: "",
+              autApp: "",
+              txtApp: "",
+              uniqId: 0
+          }
+          let isFlag = false
 
-              //debugger
+          if (this.typeDec.length === 0 | this.statusDec.length === 0 |
+              this.txtDec.length === 0 | this.autDec.length === 0) {
 
-              // TODO: добавить валидацию на пустые поля и дату
-              this.nullArray.userId = numId
-              this.nullArray.data = this.dataDec
-              this.nullArray.typeApp = this.typeDec
-              this.nullArray.statusApp = this.statusDec
-              this.nullArray.txtApp = this.txtDec
-              this.nullArray.autApp = this.autDec
-
-                                          
-              // перенос данных в рабочий массив newSpisok, НО БЕЗ сохранения в JSON-файл
-
-              console.log(this.indEdit)
-
-              // TODO: при выборе Иванов и 1 позицию в массиве =0 и при редактировании всё норм, а при добавлении нового
-              //        изменяет позицию = 0 и добавляет тоже самое в конец списка т.е. пушит
-              //   вероятно проблема с значением uniqId
-
-              // всё это делает при присваивании значения в nullArray еще не доходя до проверки редактирования
-              // - может от nullArray отказаться ?
-
-
-
-              console.log(this.nullArray)
-              console.log(this.newSpisok)
-              console.log(this.isEdit)
-
-
-              if (this.isEdit) {  // редактирование
-                  this.nullArray.uniqId = this.nUniqId
-                  this.newSpisok[this.indEdit] = this.nullArray
-          
-
-              } else { // новый
-                  this.nullArray.uniqId = parseInt(Date.now())
-                  this.newSpisok.push(this.nullArray)
-          
+              const isEmptyQ = confirm("Остались пустые поля. Сохранить?")
+              if (isEmptyQ) {
+                  isFlag = true
               }
-              this.chEntry(this.users.id)
-              this.isEdit = null
-
-              console.log(this.newSpisok)
-
-              // TODO: надо перенести addJson в конец файла App.json
-              // this.addJson = JSON.stringify([this.newSpisok])
-              // console.log(this.addJson)
+          } else {
+              const isSave = confirm("Сохранить изменения?");
+              if (isSave) {
+                  isFlag = true
+              }
+          }
+          
+          // перенос данных в рабочий массив newSpisok, НО БЕЗ сохранения в JSON-файл
+          if (isFlag) {
+                  nullArray.userId = numId
+                  nullArray.data = this.dataDec
+                  nullArray.typeApp = this.typeDec
+                  nullArray.statusApp = this.statusDec
+                  nullArray.txtApp = this.txtDec
+                  nullArray.autApp = this.autDec
 
 
               
+              if (this.isEdit) {  // редактирование
+                  nullArray.uniqId = this.nUniqId
+                  this.newSpisok[this.indEdit] = nullArray
+              } else { // новый
+                  nullArray.uniqId = parseInt(Date.now())
+                  this.newSpisok.push(nullArray)
+              }
+         //     this.showWorks(parseInt(this.id))
+              this.isEdit = null
           } else {
+
+
               //TODO: надо передать фокус на id="spWork"
-              document.getElementById('spWork').autofocus=true
+              
           }
+         this.showWorks(parseInt(this.id))
          this.boolSet(2, 2) // блокировка и разблокировка полей и кнопок
       },
 
@@ -282,16 +283,35 @@
           this.statusDec = ''
           this.txtDec = ''
           this.autDec = ''
-      //    this.indEdit = this.newSpisok.length
-      //    console.log(this.indEdit)
       },
-      procSave() {
+      sortData(inputData) {
+
+          this.outWork.sort(() => {
           
+              if ("a." + inputData > "b." + inputData) {
+                  return 1
+              }
+              if ("a." + inputData < "b." + inputData) {
+                  return -1
+              }
+              return 0
+          })
 
 
-     
       }
+      
+
+  },
+  watch: {
+      //TODO: просмотр действий - время редактирования, время бездействия
+
   }
 };
 </script>
 
+<style>
+    .head1 {
+        font-size: 1.3em
+    }
+
+</style>
